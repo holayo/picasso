@@ -30,6 +30,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.widget.ImageView;
 import android.widget.RemoteViews;
+import android.util.Log;
 import java.io.File;
 import java.lang.ref.ReferenceQueue;
 import java.util.ArrayList;

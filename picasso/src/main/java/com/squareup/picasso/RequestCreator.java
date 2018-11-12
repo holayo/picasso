@@ -22,6 +22,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
+import android.util.Log;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
@@ -55,6 +56,8 @@ import static com.squareup.picasso.Utils.log;
 /** Fluent API for building an image download request. */
 @SuppressWarnings("UnusedDeclaration") // Public API.
 public class RequestCreator {
+
+  private static final String TAG = "holayo";
   private static final AtomicInteger nextId = new AtomicInteger();
 
   private final Picasso picasso;
@@ -71,7 +74,10 @@ public class RequestCreator {
   private Drawable errorDrawable;
   private Object tag;
 
+  private Uri uri;
+
   RequestCreator(Picasso picasso, Uri uri, int resourceId) {
+    this.uri = uri;
     if (picasso.shutdown) {
       throw new IllegalStateException(
           "Picasso instance already shut down. Cannot submit new requests.");
@@ -482,6 +488,115 @@ public class RequestCreator {
     }
   }
 
+  public void fetchAfterCache(@Nullable ImageView target, Callback callback) {
+    long started = System.nanoTime();
+    checkMain();
+
+    if (target == null) {
+      throw new IllegalArgumentException("Target must not be null.");
+    }
+
+    if (!data.hasImage()) {
+      picasso.cancelRequest(target);
+      if (setPlaceholder) {
+        setPlaceholder(target, getPlaceholderDrawable());
+      }
+      return;
+    }
+
+    if (deferred) {
+      if (data.hasSize()) {
+        throw new IllegalStateException("Fit cannot be used with resize.");
+      }
+      int width = target.getWidth();
+      int height = target.getHeight();
+      if (width == 0 || height == 0) {
+        if (setPlaceholder) {
+          setPlaceholder(target, getPlaceholderDrawable());
+        }
+        picasso.defer(target, new DeferredRequestCreator(this, target, callback));
+        return;
+      }
+      data.resize(width, height);
+    }
+
+    Request request = createRequest(started);
+    String requestKey = createKey(request);
+
+    Bitmap bitmap = picasso.quickMemoryCacheCheck(requestKey);
+    if (shouldReadFromMemoryCache(memoryPolicy)) {
+      if (bitmap != null) {
+        picasso.cancelRequest(target);
+        setBitmap(target, picasso.context, bitmap, MEMORY, noFade, picasso.indicatorsEnabled);
+        if (picasso.loggingEnabled) {
+          log(OWNER_MAIN, VERB_COMPLETED, request.plainId(), "from " + MEMORY);
+        }
+        if (callback != null) {
+          callback.onSuccess();
+        }
+        return;
+      }
+    }
+
+    if (setPlaceholder) {
+      setPlaceholder(target, getPlaceholderDrawable());
+    }
+
+    boolean hasPlaceholder = false;
+    if (bitmap != null) {
+      Log.d(TAG, "use cached for imageview " + uri);
+      setBitmap(target, picasso.context, bitmap, MEMORY, noFade, picasso.indicatorsEnabled);
+      hasPlaceholder = true;
+    }
+
+    Action action = new FetchImageViewAction(picasso, target, request, memoryPolicy, networkPolicy, errorResId,
+                    errorDrawable, requestKey, tag, callback, noFade, hasPlaceholder, uri);
+
+    picasso.enqueueAndSubmit(action);
+  }
+
+  public void fetchAfterCache(@NonNull Target target) {
+    long started = System.nanoTime();
+    checkMain();
+
+    if (target == null) {
+      throw new IllegalArgumentException("Target must not be null.");
+    }
+    if (deferred) {
+      throw new IllegalStateException("Fit cannot be used with a Target.");
+    }
+
+    if (!data.hasImage()) {
+      picasso.cancelRequest(target);
+      target.onPrepareLoad(setPlaceholder ? getPlaceholderDrawable() : null);
+      return;
+    }
+
+    Request request = createRequest(started);
+    String requestKey = createKey(request);
+
+    Bitmap bitmap = picasso.quickMemoryCacheCheck(requestKey);
+    if (shouldReadFromMemoryCache(memoryPolicy)) {
+      if (bitmap != null) {
+        picasso.cancelRequest(target);
+        target.onBitmapLoaded(bitmap, MEMORY);
+        return;
+      }
+    }
+
+    target.onPrepareLoad(setPlaceholder ? getPlaceholderDrawable() : null);
+    boolean hasPlaceholder = false;
+    if (bitmap != null) {
+      Log.d(TAG, "cached loading for target " + uri);
+      target.onBitmapLoaded(bitmap, MEMORY);
+      hasPlaceholder = true;
+    }
+
+    Action action = new FetchTargetAction(picasso, target, request, memoryPolicy, networkPolicy, errorDrawable,
+            requestKey, tag, errorResId, hasPlaceholder, uri);
+    picasso.enqueueAndSubmit(action);
+  }
+
   /**
    * Asynchronously fulfills the request into the specified {@link Target}. In most cases, you
    * should use this when you are dealing with a custom {@link android.view.View View} or view
@@ -559,8 +674,8 @@ public class RequestCreator {
     target.onPrepareLoad(setPlaceholder ? getPlaceholderDrawable() : null);
 
     Action action =
-        new TargetAction(picasso, target, request, memoryPolicy, networkPolicy, errorDrawable,
-            requestKey, tag, errorResId);
+            new TargetAction(picasso, target, request, memoryPolicy, networkPolicy, errorDrawable,
+                    requestKey, tag, errorResId);
     picasso.enqueueAndSubmit(action);
   }
 
