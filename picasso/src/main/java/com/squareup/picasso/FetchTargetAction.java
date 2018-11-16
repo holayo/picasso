@@ -16,17 +16,24 @@
 package com.squareup.picasso;
 
 import android.graphics.Bitmap;
+import android.util.Log;
+import android.net.Uri;
 import android.graphics.drawable.Drawable;
 
 final class FetchTargetAction extends Action<Target> {
 
+  private static final String TAG = "wrx";
   private Target target;
+  private boolean hasPlaceholder;
+  private Uri uri;
 
   FetchTargetAction(Picasso picasso, Target target, Request data, int memoryPolicy, int networkPolicy,
-      Drawable errorDrawable, String key, Object tag, int errorResId) {
+      Drawable errorDrawable, String key, Object tag, int errorResId, boolean hasPlaceholder, Uri uri) {
     super(picasso, null, data, memoryPolicy, networkPolicy, errorResId, errorDrawable, key, tag,
         false);
     this.target = target;
+    this.hasPlaceholder = hasPlaceholder;
+    this.uri = uri;
   }
 
   @Override void complete(Bitmap result, Picasso.LoadedFrom from) {
@@ -45,10 +52,14 @@ final class FetchTargetAction extends Action<Target> {
 
   @Override void error(Exception e) {
     if (target != null) {
-      if (errorResId != 0) {
-        target.onBitmapFailed(e, picasso.context.getResources().getDrawable(errorResId));
+      if (!hasPlaceholder) {
+        if (errorResId != 0) {
+          target.onBitmapFailed(e, picasso.context.getResources().getDrawable(errorResId));
+        } else {
+          target.onBitmapFailed(e, errorDrawable);
+        }
       } else {
-        target.onBitmapFailed(e, errorDrawable);
+        Log.d(TAG, "already got a place holder for " + uri, e);
       }
     }
   }

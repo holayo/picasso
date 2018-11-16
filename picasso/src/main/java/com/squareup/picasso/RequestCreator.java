@@ -583,14 +583,15 @@ public class RequestCreator {
     }
 
     target.onPrepareLoad(setPlaceholder ? getPlaceholderDrawable() : null);
+    boolean hasPlaceholder = false;
     if (bitmap != null) {
       Log.d(TAG, "cached loading for target " + uri);
       target.onBitmapLoaded(bitmap, MEMORY);
+      hasPlaceholder = true;
     }
 
-    Action action =
-            new FetchTargetAction(picasso, target, request, memoryPolicy, networkPolicy, errorDrawable,
-                    requestKey, tag, errorResId);
+    Action action = new FetchTargetAction(picasso, target, request, memoryPolicy, networkPolicy, errorDrawable,
+            requestKey, tag, errorResId, hasPlaceholder, uri);
     picasso.enqueueAndSubmit(action);
   }
 
