@@ -307,7 +307,6 @@ public class Picasso {
    * @see #load(int)
    */
   public RequestCreator load(@Nullable Uri uri) {
-    Log.d("wrx", "picasso load " + uri);
     return new RequestCreator(this, uri, 0);
   }
 

@@ -20,19 +20,24 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.Animatable;
 import android.graphics.drawable.Drawable;
 import android.widget.ImageView;
+import android.net.Uri;
+import android.util.Log;
 
 class FetchImageViewAction extends Action<ImageView> {
-
-  ImageView imageView;
+  private static final String TAG = "wrx";
   Callback callback;
+  boolean hasPlaceholder;
+  Uri uri;
 
   FetchImageViewAction(Picasso picasso, ImageView imageView, Request data, int memoryPolicy,
       int networkPolicy, int errorResId, Drawable errorDrawable, String key, Object tag,
-      Callback callback, boolean noFade) {
-    super(picasso, null, data, memoryPolicy, networkPolicy, errorResId, errorDrawable, key,
+      Callback callback, boolean noFade, boolean hasPlaceholder, Uri uri) {
+    super(picasso, imageView, data, memoryPolicy, networkPolicy, errorResId, errorDrawable, key,
         tag, noFade);
-    this.imageView = imageView;
+
     this.callback = callback;
+    this.hasPlaceholder = hasPlaceholder;
+    this.uri = uri;
   }
 
   @Override public void complete(Bitmap result, Picasso.LoadedFrom from) {
@@ -41,9 +46,14 @@ class FetchImageViewAction extends Action<ImageView> {
           String.format("Attempted to complete action with no result!\n%s", this));
     }
 
+    ImageView target = this.target.get();
+    if (target == null) {
+      return;
+    }
+
     Context context = picasso.context;
     boolean indicatorsEnabled = picasso.indicatorsEnabled;
-    PicassoDrawable.setBitmap(imageView, context, result, from, noFade, indicatorsEnabled);
+    PicassoDrawable.setBitmap(target, context, result, from, noFade, indicatorsEnabled);
 
     if (callback != null) {
       callback.onSuccess();
@@ -51,18 +61,28 @@ class FetchImageViewAction extends Action<ImageView> {
   }
 
   @Override public void error(Exception e) {
-    Drawable placeholder = imageView.getDrawable();
+    ImageView target = this.target.get();
+    if (target == null) {
+      return;
+    }
+
+    Drawable placeholder = target.getDrawable();
     if (placeholder instanceof Animatable) {
       ((Animatable) placeholder).stop();
     }
-    if (errorResId != 0) {
-      imageView.setImageResource(errorResId);
-    } else if (errorDrawable != null) {
-      imageView.setImageDrawable(errorDrawable);
-    }
 
-    if (callback != null) {
-      callback.onError(e);
+    if (hasPlaceholder) {
+      Log.d(TAG, "already got a place holder for imageview " + uri, e);
+    } else {
+      if (errorResId != 0) {
+        target.setImageResource(errorResId);
+      } else if (errorDrawable != null) {
+        target.setImageDrawable(errorDrawable);
+      }
+
+      if (callback != null) {
+        callback.onError(e);
+      }
     }
   }
 

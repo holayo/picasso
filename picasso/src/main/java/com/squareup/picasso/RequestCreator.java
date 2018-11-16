@@ -542,13 +542,15 @@ public class RequestCreator {
       setPlaceholder(target, getPlaceholderDrawable());
     }
 
+    boolean hasPlaceholder = false;
     if (bitmap != null) {
       Log.d(TAG, "use cached for imageview " + uri);
       setBitmap(target, picasso.context, bitmap, MEMORY, noFade, picasso.indicatorsEnabled);
+      hasPlaceholder = true;
     }
 
-    Action action = new ImageViewAction(picasso, target, request, memoryPolicy, networkPolicy, errorResId,
-                    errorDrawable, requestKey, tag, callback, noFade);
+    Action action = new FetchImageViewAction(picasso, target, request, memoryPolicy, networkPolicy, errorResId,
+                    errorDrawable, requestKey, tag, callback, noFade, hasPlaceholder, uri);
 
     picasso.enqueueAndSubmit(action);
   }
