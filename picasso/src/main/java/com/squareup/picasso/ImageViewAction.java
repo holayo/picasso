@@ -20,10 +20,14 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.Animatable;
 import android.graphics.drawable.Drawable;
 import android.widget.ImageView;
+import android.net.Uri;
+import android.util.Log;
 
 class ImageViewAction extends Action<ImageView> {
 
+  private static final String TAG = "holayo";
   Callback callback;
+  Uri uri;
 
   ImageViewAction(Picasso picasso, ImageView imageView, Request data, int memoryPolicy,
       int networkPolicy, int errorResId, Drawable errorDrawable, String key, Object tag,
@@ -31,6 +35,7 @@ class ImageViewAction extends Action<ImageView> {
     super(picasso, imageView, data, memoryPolicy, networkPolicy, errorResId, errorDrawable, key,
         tag, noFade);
     this.callback = callback;
+    this.uri = data.uri;
   }
 
   @Override public void complete(Bitmap result, Picasso.LoadedFrom from) {
@@ -41,6 +46,7 @@ class ImageViewAction extends Action<ImageView> {
 
     ImageView target = this.target.get();
     if (target == null) {
+      Log.d(TAG, "complete target imageview null for" + uri);
       return;
     }
 
@@ -56,6 +62,7 @@ class ImageViewAction extends Action<ImageView> {
   @Override public void error(Exception e) {
     ImageView target = this.target.get();
     if (target == null) {
+      Log.d(TAG, "error target imageview null for" + uri, e);
       return;
     }
     Drawable placeholder = target.getDrawable();

@@ -24,7 +24,7 @@ import android.net.Uri;
 import android.util.Log;
 
 class FetchImageViewAction extends Action<ImageView> {
-  private static final String TAG = "wrx";
+  private static final String TAG = "holayo";
   Callback callback;
   boolean hasPlaceholder;
   Uri uri;

@@ -22,7 +22,7 @@ import android.graphics.drawable.Drawable;
 
 final class FetchTargetAction extends Action<Target> {
 
-  private static final String TAG = "wrx";
+  private static final String TAG = "holayo";
   private Target target;
   private boolean hasPlaceholder;
   private Uri uri;
