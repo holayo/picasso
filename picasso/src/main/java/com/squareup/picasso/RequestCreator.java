@@ -57,7 +57,7 @@ import static com.squareup.picasso.Utils.log;
 @SuppressWarnings("UnusedDeclaration") // Public API.
 public class RequestCreator {
 
-  private static final String TAG = "wrx";
+  private static final String TAG = "holayo";
   private static final AtomicInteger nextId = new AtomicInteger();
 
   private final Picasso picasso;

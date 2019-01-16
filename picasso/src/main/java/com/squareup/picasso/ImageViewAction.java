@@ -39,6 +39,7 @@ class ImageViewAction extends Action<ImageView> {
   }
 
   @Override public void complete(Bitmap result, Picasso.LoadedFrom from) {
+    Log.d(TAG, "into complete for " + uri);
     if (result == null) {
       throw new AssertionError(
           String.format("Attempted to complete action with no result!\n%s", this));
@@ -50,6 +51,7 @@ class ImageViewAction extends Action<ImageView> {
       return;
     }
 
+    Log.d(TAG, "complete target not null for " + uri);
     Context context = picasso.context;
     boolean indicatorsEnabled = picasso.indicatorsEnabled;
     PicassoDrawable.setBitmap(target, context, result, from, noFade, indicatorsEnabled);
@@ -60,6 +62,7 @@ class ImageViewAction extends Action<ImageView> {
   }
 
   @Override public void error(Exception e) {
+    Log.d(TAG, "into error for " + uri);
     ImageView target = this.target.get();
     if (target == null) {
       Log.d(TAG, "error target imageview null for" + uri, e);
@@ -81,6 +84,7 @@ class ImageViewAction extends Action<ImageView> {
   }
 
   @Override void cancel() {
+    Log.d(TAG, "into cancel for " + uri);
     super.cancel();
     if (callback != null) {
       callback = null;
